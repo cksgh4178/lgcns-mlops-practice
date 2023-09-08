@@ -1,5 +1,3 @@
-# TODO: 적절한 위치에 맞는 수준으로 로그 출력되도록 코드 작성
-
 # sourcery skip: raise-specific-error
 import os
 import sys
@@ -24,8 +22,7 @@ from src.common.utils import get_param_set
 from src.preprocess import preprocess_pipeline
 
 # 로그 들어갈 위치
-# TODO: 로그를 정해진 로그 경로에 logs.log로 저장하도록 설정
-
+logger = set_logger(os.path.join(LOG_FILEPATH, "logs.log"))
 sys.excepthook = handle_exception
 warnings.filterwarnings(action="ignore")
 
@@ -38,6 +35,7 @@ if __name__ == "__main__":
 
     X = preprocess_pipeline.fit_transform(X=_X, y=y)
 
+    logger.info("Saving the featuer data...")
     if not os.path.exists(os.path.join(DATA_PATH, "storage")):
         os.makedirs(os.path.join(DATA_PATH, "storage"))
     X.assign(rent=y).to_csv(
@@ -54,7 +52,8 @@ if __name__ == "__main__":
     param_set = get_param_set(params=params_candidates)
 
     # Set experiment name for mlflow
-    experiment_name = "new_experiment2"
+    logger.info("Setting a ew experiment for MLflow...")
+    experiment_name = "new_experiment_with_log"
     mlflow.set_experiment(experiment_name=experiment_name)
     mlflow.set_tracking_uri("./mlruns")
 
@@ -80,6 +79,8 @@ if __name__ == "__main__":
             # 로깅 정보: 평가 메트릭
             mlflow.log_metrics({"RMSE_CV": score_cv.mean()})
 
+            logger.info(f"RMSE CV Score for {run_name}: {score_cv.mean()}")
+
             # 로깅 정보 : 학습 loss
             for s in regr.train_score_:
                 mlflow.log_metric("Train Loss", s)
@@ -103,7 +104,7 @@ if __name__ == "__main__":
 
     best_run = mlflow.get_run(best_run_df.at[0, "run_id"])
     best_params = best_run.data.params
-
+    logger.info(f"Best Hyper-parameter: {best_params}")
     best_model_uri = f"{best_run.info.artifact_uri}/model"
 
     copy_tree(best_model_uri.replace("file://", ""), ARTIFACT_PATH)
