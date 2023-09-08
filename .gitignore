@@ -170,3 +170,6 @@ artifacts/
 
 # datastorage
 data/storage/
+
+# predictions
+predictions/
